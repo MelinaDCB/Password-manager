@@ -78,7 +78,7 @@ website.grid(column=1, row=1, columnspan=2, sticky="EW")
 website.focus()
 email = Entry()
 email.grid(column=1, row=2, columnspan=2, sticky="EW")
-email.insert(0, "melina.decombas@gmail.com")
+email.insert(0, "your.email@gmail.com")
 password = Entry(width=32)
 password.grid(column=1, row=3, sticky="W")
 
