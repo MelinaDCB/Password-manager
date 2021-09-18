@@ -1,3 +1,4 @@
+import json
 from tkinter import *
 from tkinter import messagebox
 from random import choice, randint, shuffle
@@ -28,31 +29,59 @@ def generate_password():
     password.insert(0, final_password)
     pyperclip.copy(final_password)
 
+
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 
 
 def save():
+    global data
     website_entry = website.get()
     email_entry = email.get()
     password_entry = password.get()
+    new_data = {
+        website_entry: {
+            "email": email_entry,
+            "password": password_entry,
+        }
+    }
 
     if len(website_entry) == 0 or len(email_entry) == 0 or len(password_entry) == 0:
         messagebox.showinfo(title="Error", message="Please do not leave any fields empty ! ")
 
     else:
-        is_ok = messagebox.askokcancel(title=website_entry,
-                                       message=f"These are the details entered : \nEmail: {email_entry} "
-                                               f"\nPassword: {password_entry} \nAre those ok to save ?")
-
-        if is_ok:
-            with open("data.txt", "a") as data:  # Don't have to data.close() with this method
-                data.write(f"{website_entry} | {email_entry} | {password_entry} \n")
+        try:
+            with open('data.json', 'r') as data_file:
+                data = json.load(data_file)  # Read old data
+                data.update(new_data)  # Update old data with new data
+        except (FileNotFoundError, json.decoder.JSONDecodeError):
+            data = new_data
+        finally:
+            with open('data.json', 'w') as data_file:
+                json.dump(data, data_file, indent=4)  # Save updated data
             website.delete(0, END)
             password.delete(0, END)
 
 
-# ---------------------------- UI SETUP ------------------------------- #
+def find_password():
+    website_entry = website.get()
+    try:
+        with open("data.json", "r") as data_file:
+            data = json.load(data_file)
+    except FileNotFoundError:
+        messagebox.showinfo(title="Error", message="No Data File found.")
+    else:
+        if website_entry in data:
+            email_entry = data[website_entry]["email"]
+            password_entry = data[website_entry]["password"]
+            messagebox.showinfo(title=website_entry,
+                                message=f"Username/Email : {email_entry}\nPassword : {password_entry}")
+        else:
+            messagebox.showinfo(title="Error",
+                                message="We don't have a matching username/password combination for this "
+                                        "website.")
 
+
+# ---------------------------- UI SETUP ------------------------------- #
 
 window = Tk()
 window.title("Password Manager")
@@ -73,16 +102,18 @@ password_label = Label(text="Password:", font=("Arial", 13), bg=BROWN, highlight
 password_label.grid(column=0, row=3)
 
 # Entries
-website = Entry()
-website.grid(column=1, row=1, columnspan=2, sticky="EW")
+website = Entry(width=32)
+website.grid(column=1, row=1, sticky="W")
 website.focus()
 email = Entry()
 email.grid(column=1, row=2, columnspan=2, sticky="EW")
-email.insert(0, "your.email@gmail.com")
+email.insert(0, "example@gmail.com")
 password = Entry(width=32)
 password.grid(column=1, row=3, sticky="W")
 
 # Buttons
+search = Button(text="Search", bg=YELLOW, highlightthickness=0, command=find_password)
+search.grid(column=2, row=1, sticky="EW")
 generate = Button(text="Generate Password", bg=YELLOW, highlightthickness=0, command=generate_password)
 generate.grid(column=2, row=3)
 add = Button(text="Add", width=35, bg=YELLOW, highlightthickness=0, command=save)
